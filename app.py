@@ -17,7 +17,7 @@ def get_crypto_data(coin):
 
 @app.route('/')
 def index():
-    return "<h1>FORGE AGENT LIVE</h1>"
+    return "<h1>FORGE NEURAL ELITE v75.0 IS LIVE</h1>"
 
 @app.route('/data/<coin>')
 def data(coin):
@@ -25,5 +25,7 @@ def data(coin):
     return jsonify(res) if res else (jsonify({"error": "not found"}), 404)
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
+    # Render передает порт через переменную среды PORT
+    port = int(os.environ.get("PORT", 10000))
+    # Важно: host должен быть 0.0.0.0
     app.run(host='0.0.0.0', port=port)
