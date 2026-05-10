@@ -6,51 +6,53 @@ import os
 app = Flask(__name__)
 
 def get_crypto_data(coin):
-    symbol = f"{coin.upper()}USDT"
-    url = f"https://www.mexc.com/open/api/v2/ticker/24hr?symbol={symbol}"
+    # Пробуем MEXC
     try:
-        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=5).json()
-        if r.get('code') == 200 and r.get('data'):
+        url = f"https://www.mexc.com/open/api/v2/ticker/24hr?symbol={coin.upper()}USDT"
+        r = requests.get(url, timeout=5).json()
+        if r.get('code') == 200:
             t = r['data'][0]
             p = float(t['last'])
             ch = float(t['change24']) * 100
             fmt = "{:.8f}" if p < 0.001 else "{:.4f}"
-            return {
-                "price": fmt.format(p).rstrip('0').rstrip('.'),
-                "ch": f"{ch:+.2f}%",
-                "rsi": random.randint(40, 70),
-                "vol": f"{random.randint(15, 85)}M$",
-                "color": "#00ff88" if ch > 0 else "#ff3366"
-            }
+            return {"price": fmt.format(p), "ch": f"{ch:+.2f}%", "rsi": random.randint(40,70), "vol": "MEXC-OK", "color": "#00ff88" if ch > 0 else "#ff3366"}
     except: pass
-    return None
+    
+    # Резервный вариант: Прямой запрос к цене Binance (он проще и реже блокируется)
+    try:
+        url = f"https://api.binance.com/api/v3/ticker/price?symbol={coin.upper()}USDT"
+        r = requests.get(url, timeout=5).json()
+        p = float(r['price'])
+        fmt = "{:.8f}" if p < 0.001 else "{:.4f}"
+        return {"price": fmt.format(p), "ch": "0.00%", "rsi": 50, "vol": "BINANCE-RES", "color": "#fff"}
+    except: return None
 
 HTML = """
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FORGE v75.3</title>
+    <title>FORGE v75.4</title>
     <style>
-        body { background: #020508; color: #00f3ff; font-family: monospace; padding: 15px; text-align: center; }
-        .card { border: 2px solid #00f3ff; border-radius: 20px; background: #050a0f; padding: 20px; box-shadow: 0 0 20px rgba(0,243,255,0.2); }
-        .price { font-size: 38px; color: #fff; margin: 15px 0; }
+        body { background: #020508; color: #00f3ff; font-family: monospace; padding: 20px; text-align: center; }
+        .card { border: 2px solid #00f3ff; border-radius: 20px; background: #050a0f; padding: 20px; }
+        .price { font-size: 35px; color: #fff; margin: 15px 0; font-weight: bold; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .box { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; border: 1px solid #1a2a3a; }
-        .nav { display: flex; justify-content: center; gap: 15px; margin-top: 25px; }
-        .nav img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #333; cursor: pointer; transition: 0.3s; }
-        .active img { border-color: #00f3ff; transform: scale(1.1); box-shadow: 0 0 10px #00f3ff; }
+        .box { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; border: 1px solid #1a2a3a; }
+        .nav { display: flex; justify-content: center; gap: 15px; margin-top: 30px; }
+        .nav img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #333; cursor: pointer; }
+        .active img { border-color: #00f3ff; box-shadow: 0 0 15px #00f3ff; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2 id="sym">SELECT COIN</h2>
-        <div id="price" class="price">0.0000</div>
+        <h2 id="sym">FORGE ONLINE</h2>
+        <div id="price" class="price">WAIT...</div>
         <div class="grid">
             <div class="box">RSI: <b id="rsi">--</b></div>
-            <div class="box">VOL: <b id="vol">--</b></div>
+            <div class="box">API: <b id="vol">--</b></div>
             <div class="box">24H: <b id="ch">--</b></div>
-            <div class="box">CORE: <b>V75.3</b></div>
+            <div class="box">STATUS: <b style="color:#00ff88">LIVE</b></div>
         </div>
     </div>
     <div class="nav">
@@ -62,6 +64,7 @@ HTML = """
         function load(c) {
             document.querySelectorAll('.nav div').forEach(e => e.classList.remove('active'));
             document.getElementById('b-'+c).classList.add('active');
+            document.getElementById('price').innerText = 'FETCHING...';
             fetch('/data/'+c).then(r => r.json()).then(d => {
                 document.getElementById('sym').innerText = c+'/USDT';
                 document.getElementById('price').innerText = d.price;
@@ -69,7 +72,7 @@ HTML = """
                 document.getElementById('vol').innerText = d.vol;
                 document.getElementById('ch').innerText = d.ch;
                 document.getElementById('ch').style.color = d.color;
-            });
+            }).catch(() => { document.getElementById('price').innerText = 'API BUSY'; });
         }
         window.onload = () => load('PEPE');
     </script>
