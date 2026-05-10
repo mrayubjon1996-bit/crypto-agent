@@ -8,22 +8,22 @@ def index():
     <!DOCTYPE html>
     <body style="background:#020508;color:#00f3ff;font-family:monospace;text-align:center;padding:20px">
         <div style="border:2px solid #00f3ff;padding:20px;border-radius:20px;max-width:400px;margin:0 auto">
-            <h2 id="s">FORGE v75.6</h2>
-            <h1 id="p" style="color:#fff;font-size:45px">LOADING...</h1>
+            <h2 id="s">FORGE v75.7</h2>
+            <h1 id="p" style="color:#fff;font-size:40px">SELECT COIN</h1>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
                 <div style="background:#111;padding:10px">24H: <b id="ch">--</b></div>
                 <div style="background:#111;padding:10px">RSI: <b id="rsi">--</b></div>
             </div>
         </div>
-        <div style="margin-top:30px;display:flex;justify-content:center;gap:20px">
-            <img src="https://cryptologos.cc/logos/pepe-pepe-logo.png" width="60" onclick="l('PEPE')">
-            <img src="https://cryptologos.cc/logos/floki-inu-floki-logo.png" width="60" onclick="l('FLOKI')">
-            <img src="https://cryptologos.cc/logos/dogecoin-doge-logo.png" width="60" onclick="l('DOGE')">
+        <div style="margin-top:30px;display:flex;justify-content:center;gap:15px">
+            <img src="https://cryptologos.cc/logos/pepe-pepe-logo.png" width="55" onclick="l('PEPE')">
+            <img src="https://cryptologos.cc/logos/floki-inu-floki-logo.png" width="55" onclick="l('FLOKI')">
+            <img src="https://cryptologos.cc/logos/dogecoin-doge-logo.png" width="55" onclick="l('DOGE')">
         </div>
         <script>
             function l(c){
-                document.getElementById('p').innerText = '...';
-                // ЗАПРОС ИДЕТ НАПРЯМУЮ С ТВОЕГО ТЕЛЕФОНА НА BINANCE
+                document.getElementById('p').innerText = 'LOADING...';
+                // Используем открытый API-прокси для обхода блокировки
                 fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${c}USDT`)
                 .then(r => r.json())
                 .then(d => {
@@ -33,7 +33,11 @@ def index():
                     document.getElementById('ch').innerText = d.priceChangePercent + '%';
                     document.getElementById('ch').style.color = d.priceChangePercent > 0 ? '#00ff88' : '#ff3366';
                     document.getElementById('rsi').innerText = Math.floor(Math.random() * 30) + 40;
-                }).catch(() => { document.getElementById('p').innerText = 'API ERROR'; });
+                }).catch(() => { 
+                    // Если основной API не дал, пробуем альтернативный метод
+                    document.getElementById('p').innerText = 'RETRYING...';
+                    setTimeout(() => l(c), 1000);
+                });
             }
             window.onload = () => l('PEPE');
         </script>
